@@ -1,63 +1,69 @@
-import { TestBed, async, fakeAsync, inject } from '@angular/core/testing';
+import { TestBed, async, fakeAsync, inject, tick } from '@angular/core/testing';
+import { By }              from '@angular/platform-browser';
+import { DebugElement, NO_ERRORS_SCHEMA }    from '@angular/core';
 // import { NgModuleFactoryLoader } from '@angular/core';
 import { AppComponent } from './app.component';
 
 import { Router } from '@angular/router';
 
 
-import { HttpModule } from '@angular/http';
-import { InMemoryWebApiModule } from 'angular-in-memory-web-api';
-import { InMemoryStoreService } from '../api/in-memory-store.service';
-import { AppRoutingModule, routes } from './app-routing.module';
-import { SpeakerService } from './models';
+// import { HttpModule } from '@angular/http';
+// import { InMemoryWebApiModule } from 'angular-in-memory-web-api';
+// import { InMemoryStoreService } from '../api/in-memory-store.service';
+// import { AppRoutingModule, routes } from './app-routing.module';
+// import { SpeakerService } from './models';
 import { PageNotFoundComponent } from './page-not-found.component';
-import { CoreModule } from './core/core.module';
-import { LoginModule } from './login/login.module';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
-import { Observable } from 'rxjs/Observable';
+// import { CoreModule } from './core/core.module';
+// import { LoginModule } from './login/login.module';
+// import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+// import { Observable } from 'rxjs/Observable';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Speaker } from './models';
+// import { Speaker } from './models';
 
-class SpeakerServiceStub extends SpeakerService {
-  private getObservableSpeaker() {
-    const subject = new BehaviorSubject(new Speaker());
-    const retVal = subject.asObservable();
-    return <Observable<Speaker>>retVal;
-  }
-  addSpeaker(speaker: Speaker) {
-    return this.getObservableSpeaker();
-  }
-
-  deleteSpeaker(speaker: Speaker) {
-    return this.getObservableSpeaker();
-  }
-  getSpeakers() {
-    const subject = new BehaviorSubject([new Speaker()]);
-    const retVal = subject.asObservable();
-    return <Observable<[Speaker]>>retVal;
-  }
-  getSpeaker(id: number) {
-    return this.getObservableSpeaker();
-  }
-  updateSpeaker(speaker: Speaker) {
-    return this.getObservableSpeaker();
-  }
-}
+// class SpeakerServiceStub extends SpeakerService {
+//   private getObservableSpeaker() {
+//     const subject = new BehaviorSubject(new Speaker());
+//     const retVal = subject.asObservable();
+//     return <Observable<Speaker>>retVal;
+//   }
+//   addSpeaker(speaker: Speaker) {
+//     return this.getObservableSpeaker();
+//   }
+//
+//   deleteSpeaker(speaker: Speaker) {
+//     return this.getObservableSpeaker();
+//   }
+//   getSpeakers() {
+//     const subject = new BehaviorSubject([new Speaker()]);
+//     const retVal = subject.asObservable();
+//     return <Observable<[Speaker]>>retVal;
+//   }
+//   getSpeaker(id: number) {
+//     return this.getObservableSpeaker();
+//   }
+//   updateSpeaker(speaker: Speaker) {
+//     return this.getObservableSpeaker();
+//   }
+// }
 
 describe('AppComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        HttpModule,
-        LoginModule,
-        RouterTestingModule.withRoutes(routes),
-        // RouterTestingModule,
-        // AppRoutingModule,
-        CoreModule,
-        InMemoryWebApiModule.forRoot(InMemoryStoreService, { delay: 600 }),
+        RouterTestingModule.withRoutes([
+          { path: '', component: PageNotFoundComponent }
+        ])
       ],
       declarations: [AppComponent, PageNotFoundComponent],
-      providers: [{ provide: SpeakerService, useValue: SpeakerServiceStub }],
+      providers: [],
+      schemas: [
+        /**
+        * This tells the compiler to ignore any unknown elements
+        * in the component template. This way we can only test
+        * what we need to without bringing in all the dependencies.
+        */
+        NO_ERRORS_SCHEMA
+      ]
     });
     TestBed.compileComponents();
   });
@@ -70,11 +76,30 @@ describe('AppComponent', () => {
 
   it('true is true', () => expect(true).toBe(true));
 
-  it('should create the app', async(() => {
+  it('should be defined', async(() => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
     expect(app).toBeTruthy();
   }));
+
+  it('should render a route', fakeAsync(inject([Router], (router: Router) => {
+    const fixture = TestBed.createComponent(AppComponent);
+
+    router.navigate(['/']);
+
+    tick();
+    fixture.detectChanges();
+    tick();
+
+    const compiled = fixture.debugElement.nativeElement;
+    expect(compiled.querySelector('h4').textContent).toContain('Inconceivable!');
+  })));
+
+  it('should contain a navigation component', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const compiled = fixture.debugElement.nativeElement;
+    expect(compiled.querySelectorAll('ev-nav').length).toBe(1);
+  });
 
   // it('should create the app', async(() => {
 
