@@ -1,16 +1,16 @@
 import { TestBed, async, fakeAsync, inject, tick } from '@angular/core/testing';
 import { By }              from '@angular/platform-browser';
-import { DebugElement, NO_ERRORS_SCHEMA }    from '@angular/core';
+import { NgModule, DebugElement, NO_ERRORS_SCHEMA, Component, NgModuleFactoryLoader }    from '@angular/core';
 // import { NgModuleFactoryLoader } from '@angular/core';
 import { AppComponent } from './app.component';
 
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 
 // import { HttpModule } from '@angular/http';
 // import { InMemoryWebApiModule } from 'angular-in-memory-web-api';
 // import { InMemoryStoreService } from '../api/in-memory-store.service';
-// import { AppRoutingModule, routes } from './app-routing.module';
+import { routes } from './app-routing.module';
 // import { SpeakerService } from './models';
 import { PageNotFoundComponent } from './page-not-found.component';
 // import { CoreModule } from './core/core.module';
@@ -46,13 +46,28 @@ import { RouterTestingModule } from '@angular/router/testing';
 //   }
 // }
 
+@Component({
+  template: '<span>lazy-loaded</span>'
+})
+class LazyComponent {}
+
+@NgModule({
+  imports: [
+    RouterModule.forChild([
+      { path: '', component: LazyComponent }
+    ])
+  ],
+  declarations: [
+    LazyComponent
+  ]
+})
+class LazyModule {}
+
 describe('AppComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [
-        RouterTestingModule.withRoutes([
-          { path: '', component: PageNotFoundComponent }
-        ])
+        RouterTestingModule.withRoutes(routes)
       ],
       declarations: [AppComponent, PageNotFoundComponent],
       providers: [],
@@ -82,10 +97,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   }));
 
-  it('should render a route', fakeAsync(inject([Router], (router: Router) => {
+  it('should contain a navigation component', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const compiled = fixture.debugElement.nativeElement;
+    expect(compiled.querySelectorAll('ev-nav').length).toBe(1);
+  });
+
+  it('should render a 404 route', fakeAsync(inject([Router], (router: Router) => {
     const fixture = TestBed.createComponent(AppComponent);
 
-    router.navigate(['/']);
+    router.navigate(['/invalid']);
 
     tick();
     fixture.detectChanges();
@@ -95,11 +116,22 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('h4').textContent).toContain('Inconceivable!');
   })));
 
-  it('should contain a navigation component', () => {
+  it('should lazy load a dashboard module', fakeAsync(inject([Router, NgModuleFactoryLoader], (router: Router, loader: NgModuleFactoryLoader) => {
     const fixture = TestBed.createComponent(AppComponent);
+
+    loader.stubbedModules = {
+      'app/dashboard/dashboard.module#DashboardModule': LazyModule
+    };
+
+    router.navigate(['/dashboard']);
+
+    tick();
+    fixture.detectChanges();
+    tick();
+
     const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelectorAll('ev-nav').length).toBe(1);
-  });
+    expect(compiled.querySelector('span').textContent).toContain('lazy-loaded');
+  })));
 
   // it('should create the app', async(() => {
 
